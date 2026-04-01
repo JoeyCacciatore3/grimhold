@@ -4,200 +4,579 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grimhold</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #1a1a1a;
-            overflow: hidden;
-            font-family: 'Courier New', monospace;
-            color: #ffffff;
-        }
-
-        #game-canvas {
-            display: block;
-            background: #2a2a2a;
-            cursor: crosshair;
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <canvas id="game-canvas"></canvas>
     
     <script>
-        // Simple demo without modules
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
+        // Grimhold - Bundled Version
         
-        // Resize canvas
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-        
-        // Simple grid variables
+        // CONSTANTS
         const TILE_SIZE = 32;
         const MAP_WIDTH = 40;
         const MAP_HEIGHT = 30;
-        
-        let cameraX = 0;
-        let cameraY = 0;
-        let mouseX = 0;
-        let mouseY = 0;
-        let hoverTileX = 0;
-        let hoverTileY = 0;
-        
-        // Input handling
-        const keys = {};
-        
-        document.addEventListener('keydown', (e) => {
-            keys[e.code] = true;
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            keys[e.code] = false;
-        });
-        
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mouseX = e.clientX - rect.left;
-            mouseY = e.clientY - rect.top;
-            
-            // Calculate hover tile
-            hoverTileX = Math.floor((mouseX + cameraX) / TILE_SIZE);
-            hoverTileY = Math.floor((mouseY + cameraY) / TILE_SIZE);
-        });
-        
-        // Simple terrain (0=grass, 1=water, 2=stone, 4=forest, 5=mountain)
-        const terrain = [];
-        for (let y = 0; y < MAP_HEIGHT; y++) {
-            const row = [];
-            for (let x = 0; x < MAP_WIDTH; x++) {
-                if (x === 0 || x === MAP_WIDTH-1 || y === 0 || y === MAP_HEIGHT-1) {
-                    row.push(5); // Mountains on edges
-                } else if (x > 15 && x < 25 && y > 10 && y < 15) {
-                    row.push(1); // Water in center
-                } else if (Math.random() < 0.1) {
-                    row.push(4); // Random forests
-                } else {
-                    row.push(0); // Grass
-                }
-            }
-            terrain.push(row);
-        }
-        
-        // Colors for terrain
-        const terrainColors = {
-            0: '#2d5016', // Grass
-            1: '#1e3a5f', // Water
-            2: '#666666', // Stone
-            4: '#0f3a0f', // Forest
-            5: '#444444'  // Mountain
+        const VIEWPORT_WIDTH = 1280;
+        const VIEWPORT_HEIGHT = 960;
+
+        const COLORS = {
+            GRID_LINE: '#333333',
+            GRID_HOVER: '#555555',
+            TEXT_PRIMARY: '#ffffff',
+            TEXT_DEBUG: '#00ff00',
+            GRASS: '#2d5016',
+            WATER: '#1e3a5f',
+            STONE: '#666666',
+            DIRT: '#8b4513',
+            FOREST: '#0f3a0f',
+            CANVAS_BG: '#2a2a2a'
         };
-        
-        function update() {
-            // Camera movement
-            const panSpeed = 200;
-            const deltaTime = 1/60;
-            
-            if (keys['KeyW']) cameraY -= panSpeed * deltaTime;
-            if (keys['KeyS']) cameraY += panSpeed * deltaTime;
-            if (keys['KeyA']) cameraX -= panSpeed * deltaTime;
-            if (keys['KeyD']) cameraX += panSpeed * deltaTime;
-            
-            // Clamp camera
-            const maxX = (MAP_WIDTH * TILE_SIZE) - canvas.width;
-            const maxY = (MAP_HEIGHT * TILE_SIZE) - canvas.height;
-            cameraX = Math.max(0, Math.min(cameraX, maxX));
-            cameraY = Math.max(0, Math.min(cameraY, maxY));
+
+        const TIMING = {
+            FRAME_RATE: 60,
+            DAY_DURATION: 120000,
+            NIGHT_DURATION: 180000,
+            WAVE_SPAWN_INTERVAL: 5000
+        };
+
+        const CAMERA = {
+            PAN_SPEED: 200,
+            ZOOM_LEVELS: [1.0, 0.5],
+            EDGE_SCROLL_MARGIN: 50
+        };
+
+        const KEYS = {
+            PAN_UP: 'KeyW',
+            PAN_DOWN: 'KeyS', 
+            PAN_LEFT: 'KeyA',
+            PAN_RIGHT: 'KeyD',
+            ZOOM_IN: 'Equal',
+            ZOOM_OUT: 'Minus',
+            PAUSE: 'Space',
+            DEBUG: 'KeyG'
+        };
+
+        const TERRAIN = {
+            GRASS: 0,
+            WATER: 1,
+            STONE: 2,
+            DIRT: 3,
+            FOREST: 4,
+            MOUNTAIN: 5
+        };
+
+        const DEBUG = {
+            SHOW_GRID: true,
+            SHOW_COORDS: true,
+            SHOW_FPS: true,
+            SHOW_PATHFINDING: false,
+            LOG_EVENTS: false
+        };
+
+        // MATH UTILITIES
+        function distance(x1, y1, x2, y2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            return Math.sqrt(dx * dx + dy * dy);
         }
-        
-        function render() {
-            // Clear
-            ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Calculate visible tiles
-            const startX = Math.floor(cameraX / TILE_SIZE);
-            const startY = Math.floor(cameraY / TILE_SIZE);
-            const endX = Math.min(startX + Math.ceil(canvas.width / TILE_SIZE) + 1, MAP_WIDTH);
-            const endY = Math.min(startY + Math.ceil(canvas.height / TILE_SIZE) + 1, MAP_HEIGHT);
-            
-            // Draw terrain
-            for (let y = startY; y < endY; y++) {
-                for (let x = startX; x < endX; x++) {
-                    if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
-                        const screenX = x * TILE_SIZE - cameraX;
-                        const screenY = y * TILE_SIZE - cameraY;
-                        
-                        const terrainType = terrain[y][x];
-                        ctx.fillStyle = terrainColors[terrainType];
-                        ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function lerp(a, b, t) {
+            return a + (b - a) * clamp(t, 0, 1);
+        }
+
+        // EVENT SYSTEM
+        class EventEmitter {
+            constructor() {
+                this.events = new Map();
+            }
+
+            on(event, callback) {
+                if (!this.events.has(event)) {
+                    this.events.set(event, new Set());
+                }
+                this.events.get(event).add(callback);
+                
+                return () => {
+                    const eventCallbacks = this.events.get(event);
+                    if (eventCallbacks) {
+                        eventCallbacks.delete(callback);
+                        if (eventCallbacks.size === 0) {
+                            this.events.delete(event);
+                        }
+                    }
+                };
+            }
+
+            emit(event, ...args) {
+                const eventCallbacks = this.events.get(event);
+                if (eventCallbacks) {
+                    const callbacks = Array.from(eventCallbacks);
+                    for (const callback of callbacks) {
+                        try {
+                            callback(...args);
+                        } catch (error) {
+                            console.error(`Error in event callback for '${event}':`, error);
+                        }
                     }
                 }
             }
-            
-            // Draw grid
-            ctx.strokeStyle = '#333333';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            
-            // Vertical lines
-            for (let x = startX; x <= endX; x++) {
-                const screenX = x * TILE_SIZE - cameraX;
-                ctx.moveTo(screenX, 0);
-                ctx.lineTo(screenX, canvas.height);
+
+            off(event) {
+                if (event) {
+                    this.events.delete(event);
+                } else {
+                    this.events.clear();
+                }
             }
-            
-            // Horizontal lines
-            for (let y = startY; y <= endY; y++) {
-                const screenY = y * TILE_SIZE - cameraY;
-                ctx.moveTo(0, screenY);
-                ctx.lineTo(canvas.width, screenY);
-            }
-            ctx.stroke();
-            
-            // Draw hover highlight
-            if (hoverTileX >= 0 && hoverTileX < MAP_WIDTH && hoverTileY >= 0 && hoverTileY < MAP_HEIGHT) {
-                const screenX = hoverTileX * TILE_SIZE - cameraX;
-                const screenY = hoverTileY * TILE_SIZE - cameraY;
-                
-                ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
-                
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
-            }
-            
-            // Draw debug info
-            ctx.fillStyle = 'rgba(0,0,0,0.7)';
-            ctx.fillRect(10, 10, 250, 80);
-            
-            ctx.fillStyle = '#00ff00';
-            ctx.font = '12px monospace';
-            ctx.fillText(`Mouse: ${hoverTileX}, ${hoverTileY}`, 15, 25);
-            ctx.fillText(`Camera: ${Math.round(cameraX)}, ${Math.round(cameraY)}`, 15, 40);
-            ctx.fillText('WASD: Pan camera', 15, 55);
-            ctx.fillText('Grimhold - Phase 2 Demo', 15, 70);
         }
-        
-        function gameLoop() {
-            update();
-            render();
-            requestAnimationFrame(gameLoop);
+
+        const gameEvents = new EventEmitter();
+
+        // GRID SYSTEM
+        class Grid {
+            constructor(width = MAP_WIDTH, height = MAP_HEIGHT) {
+                this.width = width;
+                this.height = height;
+                this.tileSize = TILE_SIZE;
+                this.tiles = this.createEmptyGrid();
+                this.cameraX = 0;
+                this.cameraY = 0;
+            }
+
+            createEmptyGrid() {
+                const grid = [];
+                for (let y = 0; y < this.height; y++) {
+                    const row = [];
+                    for (let x = 0; x < this.width; x++) {
+                        row.push({
+                            terrain: TERRAIN.GRASS,
+                            building: null,
+                            x: x,
+                            y: y
+                        });
+                    }
+                    grid.push(row);
+                }
+                return grid;
+            }
+
+            worldToGrid(worldX, worldY) {
+                const gridX = Math.floor((worldX + this.cameraX) / this.tileSize);
+                const gridY = Math.floor((worldY + this.cameraY) / this.tileSize);
+                
+                if (this.isValidTile(gridX, gridY)) {
+                    return { x: gridX, y: gridY };
+                }
+                return null;
+            }
+
+            gridToWorld(gridX, gridY) {
+                return {
+                    x: gridX * this.tileSize - this.cameraX,
+                    y: gridY * this.tileSize - this.cameraY
+                };
+            }
+
+            isValidTile(x, y) {
+                return x >= 0 && x < this.width && y >= 0 && y < this.height;
+            }
+
+            getTile(x, y) {
+                if (this.isValidTile(x, y)) {
+                    return this.tiles[y][x];
+                }
+                return null;
+            }
+
+            setTerrain(x, y, terrainType) {
+                const tile = this.getTile(x, y);
+                if (tile) {
+                    tile.terrain = terrainType;
+                }
+            }
+
+            moveCamera(deltaX, deltaY) {
+                this.cameraX += deltaX;
+                this.cameraY += deltaY;
+                
+                const maxX = (this.width * this.tileSize) - window.innerWidth;
+                const maxY = (this.height * this.tileSize) - window.innerHeight;
+                
+                this.cameraX = Math.max(0, Math.min(this.cameraX, maxX));
+                this.cameraY = Math.max(0, Math.min(this.cameraY, maxY));
+            }
+
+            getCameraPosition() {
+                return { x: this.cameraX, y: this.cameraY };
+            }
         }
-        
-        // Start the demo
-        console.log('🏰 Grimhold Simple Demo Started');
-        gameLoop();
+
+        // RENDERER
+        class Renderer {
+            constructor(canvas, grid) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.grid = grid;
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                this.frameCount = 0;
+                this.lastFpsTime = 0;
+                this.currentFps = 0;
+            }
+
+            resizeCanvas() {
+                const dpr = window.devicePixelRatio || 1;
+                this.canvas.width = window.innerWidth * dpr;
+                this.canvas.height = window.innerHeight * dpr;
+                this.canvas.style.width = window.innerWidth + 'px';
+                this.canvas.style.height = window.innerHeight + 'px';
+                this.ctx.scale(dpr, dpr);
+                this.ctx.imageSmoothingEnabled = false;
+                this.ctx.textAlign = 'left';
+                this.ctx.textBaseline = 'top';
+                this.ctx.font = '12px monospace';
+            }
+
+            clear() {
+                this.ctx.fillStyle = COLORS.CANVAS_BG;
+                this.ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+            }
+
+            drawGrid() {
+                if (!DEBUG.SHOW_GRID) return;
+                
+                const camera = this.grid.getCameraPosition();
+                const startX = Math.floor(camera.x / TILE_SIZE);
+                const startY = Math.floor(camera.y / TILE_SIZE);
+                const endX = Math.min(startX + Math.ceil(window.innerWidth / TILE_SIZE) + 1, this.grid.width);
+                const endY = Math.min(startY + Math.ceil(window.innerHeight / TILE_SIZE) + 1, this.grid.height);
+                
+                this.ctx.strokeStyle = COLORS.GRID_LINE;
+                this.ctx.lineWidth = 1;
+                this.ctx.beginPath();
+                
+                for (let x = startX; x <= endX; x++) {
+                    const screenX = x * TILE_SIZE - camera.x;
+                    this.ctx.moveTo(screenX, 0);
+                    this.ctx.lineTo(screenX, window.innerHeight);
+                }
+                
+                for (let y = startY; y <= endY; y++) {
+                    const screenY = y * TILE_SIZE - camera.y;
+                    this.ctx.moveTo(0, screenY);
+                    this.ctx.lineTo(window.innerWidth, screenY);
+                }
+                
+                this.ctx.stroke();
+            }
+
+            drawTerrain() {
+                const camera = this.grid.getCameraPosition();
+                const startX = Math.floor(camera.x / TILE_SIZE);
+                const startY = Math.floor(camera.y / TILE_SIZE);
+                const endX = Math.min(startX + Math.ceil(window.innerWidth / TILE_SIZE) + 1, this.grid.width);
+                const endY = Math.min(startY + Math.ceil(window.innerHeight / TILE_SIZE) + 1, this.grid.height);
+                
+                for (let y = startY; y < endY; y++) {
+                    for (let x = startX; x < endX; x++) {
+                        const tile = this.grid.getTile(x, y);
+                        if (!tile) continue;
+                        
+                        const screenX = x * TILE_SIZE - camera.x;
+                        const screenY = y * TILE_SIZE - camera.y;
+                        
+                        this.ctx.fillStyle = this.getTerrainColor(tile.terrain);
+                        this.ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
+                    }
+                }
+            }
+
+            getTerrainColor(terrainType) {
+                switch (terrainType) {
+                    case 0: return COLORS.GRASS;
+                    case 1: return COLORS.WATER;
+                    case 2: return COLORS.STONE;
+                    case 3: return COLORS.DIRT;
+                    case 4: return COLORS.FOREST;
+                    case 5: return COLORS.STONE;
+                    default: return COLORS.GRASS;
+                }
+            }
+
+            drawTileHighlight(gridX, gridY, color = COLORS.GRID_HOVER) {
+                const worldPos = this.grid.gridToWorld(gridX, gridY);
+                
+                this.ctx.fillStyle = color;
+                this.ctx.globalAlpha = 0.3;
+                this.ctx.fillRect(worldPos.x, worldPos.y, TILE_SIZE, TILE_SIZE);
+                this.ctx.globalAlpha = 1.0;
+                
+                this.ctx.strokeStyle = color;
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(worldPos.x, worldPos.y, TILE_SIZE, TILE_SIZE);
+            }
+
+            drawDebugInfo(debugInfo = {}) {
+                if (!DEBUG.SHOW_FPS && !DEBUG.SHOW_COORDS) return;
+                
+                const info = [];
+                
+                if (DEBUG.SHOW_FPS) {
+                    info.push(`FPS: ${this.currentFps}`);
+                }
+                
+                if (debugInfo.mouseGridPos) {
+                    info.push(`Mouse: ${debugInfo.mouseGridPos.x}, ${debugInfo.mouseGridPos.y}`);
+                }
+                
+                if (debugInfo.camera) {
+                    info.push(`Camera: ${Math.round(debugInfo.camera.x)}, ${Math.round(debugInfo.camera.y)}`);
+                }
+                
+                if (info.length > 0) {
+                    this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                    this.ctx.fillRect(10, 10, 200, info.length * 16 + 10);
+                    
+                    this.ctx.fillStyle = COLORS.TEXT_DEBUG;
+                    this.ctx.font = '12px monospace';
+                    info.forEach((text, index) => {
+                        this.ctx.fillText(text, 15, 20 + index * 16);
+                    });
+                }
+            }
+
+            updateFPS(timestamp) {
+                this.frameCount++;
+                
+                if (timestamp - this.lastFpsTime >= 1000) {
+                    this.currentFps = this.frameCount;
+                    this.frameCount = 0;
+                    this.lastFpsTime = timestamp;
+                }
+            }
+        }
+
+        // INPUT SYSTEM
+        class Input {
+            constructor(canvas, grid) {
+                this.canvas = canvas;
+                this.grid = grid;
+                this.keys = new Map();
+                this.mouseX = 0;
+                this.mouseY = 0;
+                this.mouseGridPos = null;
+                this.panSpeed = CAMERA.PAN_SPEED;
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                document.addEventListener('keydown', (e) => this.onKeyDown(e));
+                document.addEventListener('keyup', (e) => this.onKeyUp(e));
+                this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                
+                document.addEventListener('keydown', (e) => {
+                    if (Object.values(KEYS).includes(e.code)) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            onKeyDown(event) {
+                this.keys.set(event.code, true);
+            }
+
+            onKeyUp(event) {
+                this.keys.set(event.code, false);
+            }
+
+            onMouseMove(event) {
+                const rect = this.canvas.getBoundingClientRect();
+                this.mouseX = event.clientX - rect.left;
+                this.mouseY = event.clientY - rect.top;
+                this.mouseGridPos = this.grid.worldToGrid(this.mouseX, this.mouseY);
+            }
+
+            update(deltaTime) {
+                this.handleCameraMovement(deltaTime);
+            }
+
+            handleCameraMovement(deltaTime) {
+                let deltaX = 0;
+                let deltaY = 0;
+                const panDistance = this.panSpeed * deltaTime;
+                
+                if (this.isKeyPressed(KEYS.PAN_LEFT)) {
+                    deltaX -= panDistance;
+                }
+                if (this.isKeyPressed(KEYS.PAN_RIGHT)) {
+                    deltaX += panDistance;
+                }
+                if (this.isKeyPressed(KEYS.PAN_UP)) {
+                    deltaY -= panDistance;
+                }
+                if (this.isKeyPressed(KEYS.PAN_DOWN)) {
+                    deltaY += panDistance;
+                }
+                
+                if (deltaX !== 0 || deltaY !== 0) {
+                    this.grid.moveCamera(deltaX, deltaY);
+                    this.mouseGridPos = this.grid.worldToGrid(this.mouseX, this.mouseY);
+                }
+            }
+
+            isKeyPressed(keyCode) {
+                return this.keys.get(keyCode) === true;
+            }
+
+            getMouseGridPosition() {
+                return this.mouseGridPos;
+            }
+        }
+
+        // MAP SYSTEM
+        class Map {
+            constructor(grid) {
+                this.grid = grid;
+                this.generateDefaultTerrain();
+            }
+
+            generateDefaultTerrain() {
+                // Fill with grass
+                for (let y = 0; y < MAP_HEIGHT; y++) {
+                    for (let x = 0; x < MAP_WIDTH; x++) {
+                        this.grid.setTerrain(x, y, TERRAIN.GRASS);
+                    }
+                }
+
+                // Add mountains on edges
+                for (let x = 0; x < MAP_WIDTH; x++) {
+                    this.grid.setTerrain(x, 0, TERRAIN.MOUNTAIN);
+                    this.grid.setTerrain(x, MAP_HEIGHT - 1, TERRAIN.MOUNTAIN);
+                }
+                for (let y = 0; y < MAP_HEIGHT; y++) {
+                    this.grid.setTerrain(0, y, TERRAIN.MOUNTAIN);
+                    this.grid.setTerrain(MAP_WIDTH - 1, y, TERRAIN.MOUNTAIN);
+                }
+
+                // Add water feature
+                for (let x = 15; x < 25; x++) {
+                    for (let y = 12; y < 16; y++) {
+                        this.grid.setTerrain(x, y, TERRAIN.WATER);
+                    }
+                }
+
+                // Add forest patches
+                for (let x = 5; x < 10; x++) {
+                    for (let y = 5; y < 9; y++) {
+                        this.grid.setTerrain(x, y, TERRAIN.FOREST);
+                    }
+                }
+                for (let x = 30; x < 35; x++) {
+                    for (let y = 20; y < 25; y++) {
+                        this.grid.setTerrain(x, y, TERRAIN.FOREST);
+                    }
+                }
+
+                // Add stone deposits
+                for (let x = 10; x < 12; x++) {
+                    for (let y = 20; y < 22; y++) {
+                        this.grid.setTerrain(x, y, TERRAIN.STONE);
+                    }
+                }
+                for (let x = 25; x < 27; x++) {
+                    for (let y = 8; y < 10; y++) {
+                        this.grid.setTerrain(x, y, TERRAIN.STONE);
+                    }
+                }
+
+                console.log('🗺️ Generated default terrain');
+            }
+        }
+
+        // MAIN GAME CLASS
+        class Game {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.grid = new Grid();
+                this.renderer = new Renderer(canvas, this.grid);
+                this.input = new Input(canvas, this.grid);
+                this.map = new Map(this.grid);
+                this.running = false;
+                this.frameId = null;
+                this.lastTime = 0;
+                this.gameLoop = this.gameLoop.bind(this);
+                
+                console.log('🏰 Grimhold initialized');
+            }
+
+            async init() {
+                console.log('🔧 Initializing game systems...');
+                console.log('✅ All systems ready');
+            }
+
+            start() {
+                if (this.running) return;
+                
+                console.log('🚀 Starting game loop');
+                this.running = true;
+                this.lastTime = performance.now();
+                this.gameLoop(this.lastTime);
+            }
+
+            stop() {
+                console.log('⏹️ Stopping game');
+                this.running = false;
+                if (this.frameId) {
+                    cancelAnimationFrame(this.frameId);
+                    this.frameId = null;
+                }
+            }
+
+            gameLoop(currentTime) {
+                if (!this.running) return;
+                
+                const deltaTime = Math.min((currentTime - this.lastTime) / 1000, 1/30);
+                this.lastTime = currentTime;
+                
+                this.renderer.updateFPS(currentTime);
+                this.update(deltaTime);
+                this.render();
+                
+                this.frameId = requestAnimationFrame(this.gameLoop);
+            }
+
+            update(deltaTime) {
+                this.input.update(deltaTime);
+            }
+
+            render() {
+                this.renderer.clear();
+                this.renderer.drawTerrain();
+                this.renderer.drawGrid();
+                
+                const mouseGridPos = this.input.getMouseGridPosition();
+                if (mouseGridPos) {
+                    this.renderer.drawTileHighlight(mouseGridPos.x, mouseGridPos.y);
+                }
+                
+                this.renderer.drawDebugInfo({
+                    mouseGridPos: mouseGridPos,
+                    camera: this.grid.getCameraPosition()
+                });
+            }
+        }
+
+        // INITIALIZE GAME
+        document.addEventListener('DOMContentLoaded', async () => {
+            const canvas = document.getElementById('game-canvas');
+            const game = new Game(canvas);
+            await game.init();
+            game.start();
+        });
     </script>
 </body>
 </html>
