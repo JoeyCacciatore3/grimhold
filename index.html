@@ -10,22 +10,24 @@
     <canvas id="game-canvas"></canvas>
     
     <!-- Utils (no dependencies) -->
-    <script src="js/utils/constants.js"></script>
-    <script src="js/utils/math.js"></script>
-    <script src="js/utils/events.js"></script>
+    <script type="module" src="js/utils/constants.js"></script>
+    <script type="module" src="js/utils/math.js"></script>
+    <script type="module" src="js/utils/events.js"></script>
     
     <!-- Engine (depends on utils) -->
-    <script src="js/engine/Grid.js"></script>
-    <script src="js/engine/Renderer.js"></script>
-    <script src="js/engine/Input.js"></script>
-    <script src="js/engine/Game.js"></script>
+    <script type="module" src="js/engine/Grid.js"></script>
+    <script type="module" src="js/engine/Renderer.js"></script>
+    <script type="module" src="js/engine/Input.js"></script>
+    <script type="module" src="js/engine/Game.js"></script>
     
-    <script>
+    <script type="module">
         // Initialize game when page loads
-        document.addEventListener('DOMContentLoaded', () => {
+        import { Game } from './js/engine/Game.js';
+        
+        document.addEventListener('DOMContentLoaded', async () => {
             const canvas = document.getElementById('game-canvas');
             const game = new Game(canvas);
-            game.init();
+            await game.init();
             game.start();
         });
     </script>

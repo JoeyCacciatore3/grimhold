@@ -117,29 +117,31 @@
     </div>
 
     <!-- Game scripts -->
-    <script src="../js/utils/constants.js"></script>
-    <script src="../js/utils/math.js"></script>
-    <script src="../js/utils/events.js"></script>
-    <script src="../js/engine/Grid.js"></script>
-    <script src="../js/engine/Renderer.js"></script>
-    <script src="../js/engine/Input.js"></script>
-    <script src="../js/engine/Game.js"></script>
+    <script type="module" src="../js/utils/constants.js"></script>
+    <script type="module" src="../js/utils/math.js"></script>
+    <script type="module" src="../js/utils/events.js"></script>
+    <script type="module" src="../js/engine/Grid.js"></script>
+    <script type="module" src="../js/engine/Renderer.js"></script>
+    <script type="module" src="../js/engine/Input.js"></script>
+    <script type="module" src="../js/engine/Game.js"></script>
 
-    <script>
+    <script type="module">
         // Test framework
         let game = null;
         let testResults = {};
         let testStartTime = 0;
         
         // Initialize test
+        import { Game } from '../js/engine/Game.js';
+        
         document.addEventListener('DOMContentLoaded', async () => {
             log('🚀 Starting Grimhold Grid Test');
             
             try {
                 const canvas = document.getElementById('game-canvas');
-                game = new Game(canvas);
-                await game.init();
-                game.start();
+                window.game = new Game(canvas);
+                await window.game.init();
+                window.game.start();
                 
                 log('✅ Game initialized successfully');
                 

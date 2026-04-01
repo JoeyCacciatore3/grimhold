@@ -173,16 +173,29 @@
         </div>
     </div>
 
-    <!-- Game scripts -->
-    <script src="../js/utils/constants.js"></script>
-    <script src="../js/utils/math.js"></script>
-    <script src="../js/utils/events.js"></script>
-    <script src="../js/engine/Grid.js"></script>
-    <script src="../js/engine/Renderer.js"></script>
-    <script src="../js/engine/Input.js"></script>
-    <script src="../js/engine/AssetLoader.js"></script>
-    <script src="../js/engine/Pathfinder.js"></script>
-    <script src="../js/game/Map.js"></script>
+    <!-- Game scripts loaded as modules -->
+    <script type="module">
+        // Import all classes
+        import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, COLORS, DEBUG, KEYS, CAMERA } from '../js/utils/constants.js';
+        import { distance, manhattanDistance, clamp, lerp } from '../js/utils/math.js';
+        import { gameEvents, EVENTS } from '../js/utils/events.js';
+        import { Grid } from '../js/engine/Grid.js';
+        import { Renderer } from '../js/engine/Renderer.js';
+        import { Input } from '../js/engine/Input.js';
+        import { AssetLoader } from '../js/engine/AssetLoader.js';
+        import { Pathfinder } from '../js/engine/Pathfinder.js';
+        import { Map } from '../js/game/Map.js';
+        
+        // Make classes globally available for the test
+        window.Grid = Grid;
+        window.Renderer = Renderer;
+        window.Input = Input;
+        window.AssetLoader = AssetLoader;
+        window.Pathfinder = Pathfinder;
+        window.Map = Map;
+        window.gameEvents = gameEvents;
+        window.EVENTS = EVENTS;
+    </script>
 
     <script>
         // Test framework
