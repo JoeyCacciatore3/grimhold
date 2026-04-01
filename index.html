@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grimhold</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <canvas id="game-canvas"></canvas>
+    
+    <!-- Utils (no dependencies) -->
+    <script src="js/utils/constants.js"></script>
+    <script src="js/utils/math.js"></script>
+    <script src="js/utils/events.js"></script>
+    
+    <!-- Engine (depends on utils) -->
+    <script src="js/engine/Grid.js"></script>
+    <script src="js/engine/Renderer.js"></script>
+    <script src="js/engine/Input.js"></script>
+    <script src="js/engine/Game.js"></script>
+    
+    <script>
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('game-canvas');
+            const game = new Game(canvas);
+            game.init();
+            game.start();
+        });
+    </script>
+</body>
+</html>

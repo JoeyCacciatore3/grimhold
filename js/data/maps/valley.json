@@ -1,0 +1,62 @@
+{
+  "name": "Thornwall Canyon",
+  "description": "A narrow canyon with steep walls. Excellent for funneling enemies into kill zones, but limited expansion space requires careful planning.",
+  "difficulty": "intermediate",
+  "townCenter": {
+    "x": 20,
+    "y": 15
+  },
+  "spawnPoints": [
+    {
+      "x": 5,
+      "y": 15,
+      "name": "Canyon Mouth",
+      "description": "Primary enemy spawn point at the narrow canyon entrance"
+    },
+    {
+      "x": 35,
+      "y": 15,
+      "name": "Hidden Path",
+      "description": "Smaller enemy groups find this mountain trail"
+    },
+    {
+      "x": 20,
+      "y": 3,
+      "name": "Clifftop",
+      "description": "Flying enemies and siege weapons deploy here"
+    },
+    {
+      "x": 20,
+      "y": 27,
+      "name": "Cave Exit",
+      "description": "Underground tunnelers emerge here in later waves"
+    }
+  ],
+  "generate": {
+    "type": "valley",
+    "riverWidth": 3,
+    "wallHeight": 12,
+    "forestDensity": 0.25,
+    "stoneDensity": 0.35
+  },
+  "features": {
+    "chokepoints": ["west entrance", "east passage"],
+    "verticalThreat": true,
+    "resources": {
+      "stone": "rich deposits in walls",
+      "wood": "limited forest patches", 
+      "water": "central river"
+    }
+  },
+  "strategy": {
+    "defensive": "Control the western entrance with overlapping tower fields",
+    "economic": "Build efficiently in limited central space",
+    "late_game": "Prepare for multi-directional assaults"
+  },
+  "tips": [
+    "Build towers on elevated positions for range bonus",
+    "River provides natural enemy movement penalty",
+    "Stone walls are essential - wood won't survive late waves",
+    "Keep eastern flank covered but prioritize west"
+  ]
+}

@@ -1,0 +1,59 @@
+/* Grimhold - Fullscreen Canvas Game */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #1a1a1a;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    color: #ffffff;
+}
+
+#game-canvas {
+    display: block;
+    background: #2a2a2a;
+    cursor: crosshair;
+}
+
+/* Debug info overlay */
+.debug-info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #00ff00;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: monospace;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Future UI elements */
+.ui-panel {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #555;
+    border-radius: 8px;
+    padding: 15px;
+    color: #fff;
+}
+
+.resource-bar {
+    top: 10px;
+    right: 10px;
+    min-width: 200px;
+}
+
+.build-menu {
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}

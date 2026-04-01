@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grimhold - Pathfinding Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #ffffff;
+            font-family: monospace;
+        }
+        
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .test-info {
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #333;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .test-controls button {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        
+        .test-controls button:hover {
+            background: #444;
+        }
+        
+        .test-controls button.active {
+            background: #0a5a0a;
+            border-color: #0a8a0a;
+        }
+        
+        #game-canvas {
+            border: 2px solid #555;
+            border-radius: 8px;
+            background: #2a2a2a;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .test-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            background: rgba(0,100,0,0.2);
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #00aa00;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ff00;
+        }
+        
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🧭 Grimhold - Pathfinding Test</h1>
+            <p>Testing Phase 2: Map System, Terrain Loading, A* Pathfinding</p>
+        </div>
+        
+        <div class="test-info">
+            <div class="test-controls">
+                <h3 style="width: 100%; margin: 0 0 10px 0;">Test Controls:</h3>
+                <button onclick="loadTutorialMap()">📍 Tutorial Map</button>
+                <button onclick="loadValleyMap()">⛰️ Valley Map</button>
+                <button onclick="loadPlainsMap()">🌾 Plains Map</button>
+                <button onclick="clearPath()">🧹 Clear Path</button>
+                <button onclick="testRandomPaths()">🎲 Random Paths</button>
+                <button onclick="togglePathMode()" id="path-mode-btn">🖱️ Click Mode: OFF</button>
+                <button onclick="runPathfindingTests()">🧪 Run Tests</button>
+            </div>
+            
+            <div>
+                <h3 style="margin: 0 0 10px 0;">Instructions:</h3>
+                <ul style="margin: 0; padding-left: 20px; font-size: 12px;">
+                    <li>Click "Click Mode: ON" then click two tiles to find path</li>
+                    <li>Green = start, Red = goal, Yellow = calculated path</li>
+                    <li>Different maps test various terrain challenges</li>
+                    <li>WASD to pan camera, mouse hover for coordinates</li>
+                </ul>
+            </div>
+        </div>
+        
+        <canvas id="game-canvas" width="900" height="650"></canvas>
+        
+        <div class="test-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-path-length">0</div>
+                <div>Path Length</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-calculation-time">0ms</div>
+                <div>Calc Time</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-terrain-cost">0.0</div>
+                <div>Terrain Cost</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-current-map">None</div>
+                <div>Current Map</div>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background: #2d5016;"></div>Grass (1.0x)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #1e3a5f;"></div>Water (3.0x)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #666666;"></div>Stone (1.2x)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #8b4513;"></div>Dirt (0.8x)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #0f3a0f;"></div>Forest (2.0x)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #444444;"></div>Mountain (∞)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #00ff00;"></div>Start Point</div>
+            <div class="legend-item"><div class="legend-color" style="background: #ff0000;"></div>Goal Point</div>
+            <div class="legend-item"><div class="legend-color" style="background: #ffff00;"></div>Path</div>
+        </div>
+    </div>
+
+    <!-- Game scripts -->
+    <script src="../js/utils/constants.js"></script>
+    <script src="../js/utils/math.js"></script>
+    <script src="../js/utils/events.js"></script>
+    <script src="../js/engine/Grid.js"></script>
+    <script src="../js/engine/Renderer.js"></script>
+    <script src="../js/engine/Input.js"></script>
+    <script src="../js/engine/AssetLoader.js"></script>
+    <script src="../js/engine/Pathfinder.js"></script>
+    <script src="../js/game/Map.js"></script>
+
+    <script>
+        // Test framework
+        let grid = null;
+        let renderer = null;
+        let input = null;
+        let map = null;
+        let pathfinder = null;
+        let assetLoader = null;
+        
+        // Test state
+        let currentPath = null;
+        let startPoint = null;
+        let goalPoint = null;
+        let pathfindingMode = false;
+        let clickStep = 0; // 0 = select start, 1 = select goal
+        
+        // Performance tracking
+        let lastCalculationTime = 0;
+        let pathStats = { length: 0, cost: 0 };
+        
+        // Initialize test
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Starting Pathfinding Test');
+            
+            try {
+                const canvas = document.getElementById('game-canvas');
+                
+                // Initialize core systems
+                grid = new Grid();
+                renderer = new Renderer(canvas, grid);
+                input = new Input(canvas, grid);
+                map = new Map(grid);
+                pathfinder = new Pathfinder(grid);
+                assetLoader = new AssetLoader();
+                
+                // Setup input handling
+                setupInputHandling();
+                
+                // Start render loop
+                startRenderLoop();
+                
+                // Load default map
+                await loadTutorialMap();
+                
+                console.log('✅ Pathfinding test initialized');
+                
+            } catch (error) {\n                console.error('❌ Failed to initialize test:', error);\n            }\n        });\n        \n        function setupInputHandling() {\n            // Handle clicks for pathfinding\n            gameEvents.on('ui:click', (clickData) => {\n                if (pathfindingMode) {\n                    handlePathfindingClick(clickData);\n                }\n            });\n        }\n        \n        function handlePathfindingClick(clickData) {\n            const { gridX, gridY } = clickData;\n            \n            if (clickStep === 0) {\n                // Set start point\n                startPoint = { x: gridX, y: gridY };\n                goalPoint = null;\n                currentPath = null;\n                clickStep = 1;\n                console.log(`🚀 Start point set: (${gridX}, ${gridY})`);\n            } else {\n                // Set goal point and calculate path\n                goalPoint = { x: gridX, y: gridY };\n                calculatePath();\n                clickStep = 0;\n            }\n            \n            updateStats();\n        }\n        \n        function calculatePath() {\n            if (!startPoint || !goalPoint || !pathfinder) return;\n            \n            const startTime = performance.now();\n            \n            currentPath = pathfinder.findPath(\n                startPoint.x, startPoint.y,\n                goalPoint.x, goalPoint.y,\n                { allowDiagonal: true }\n            );\n            \n            const endTime = performance.now();\n            lastCalculationTime = Math.round(endTime - startTime);\n            \n            if (currentPath) {\n                // Calculate path cost\n                let totalCost = 0;\n                for (let i = 1; i < currentPath.length; i++) {\n                    const prev = currentPath[i - 1];\n                    const curr = currentPath[i];\n                    totalCost += pathfinder.getMovementCost(prev.x, prev.y, curr.x, curr.y);\n                }\n                \n                pathStats = {\n                    length: currentPath.length,\n                    cost: totalCost\n                };\n                \n                console.log(`🎯 Path found: ${currentPath.length} tiles, cost ${totalCost.toFixed(2)}, ${lastCalculationTime}ms`);\n            } else {\n                pathStats = { length: 0, cost: 0 };\n                console.log('❌ No path found');\n            }\n        }\n        \n        function startRenderLoop() {\n            function render() {\n                // Update input\n                input.update(1/60);\n                \n                // Clear and render\n                renderer.clear();\n                renderer.drawTerrain();\n                renderer.drawGrid();\n                \n                // Draw mouse hover\n                const mouseGridPos = input.getMouseGridPosition();\n                if (mouseGridPos) {\n                    renderer.drawTileHighlight(mouseGridPos.x, mouseGridPos.y);\n                }\n                \n                // Draw pathfinding visualization\n                drawPathfindingOverlay();\n                \n                // Draw debug info\n                renderer.drawDebugInfo({\n                    mouseGridPos: mouseGridPos,\n                    camera: grid.getCameraPosition()\n                });\n                \n                requestAnimationFrame(render);\n            }\n            \n            render();\n        }\n        \n        function drawPathfindingOverlay() {\n            const ctx = renderer.ctx;\n            \n            // Draw start point\n            if (startPoint) {\n                const worldPos = grid.gridToWorld(startPoint.x, startPoint.y);\n                ctx.fillStyle = '#00ff00';\n                ctx.globalAlpha = 0.7;\n                ctx.fillRect(worldPos.x, worldPos.y, 32, 32);\n                ctx.globalAlpha = 1.0;\n                \n                ctx.strokeStyle = '#00ff00';\n                ctx.lineWidth = 3;\n                ctx.strokeRect(worldPos.x, worldPos.y, 32, 32);\n            }\n            \n            // Draw goal point\n            if (goalPoint) {\n                const worldPos = grid.gridToWorld(goalPoint.x, goalPoint.y);\n                ctx.fillStyle = '#ff0000';\n                ctx.globalAlpha = 0.7;\n                ctx.fillRect(worldPos.x, worldPos.y, 32, 32);\n                ctx.globalAlpha = 1.0;\n                \n                ctx.strokeStyle = '#ff0000';\n                ctx.lineWidth = 3;\n                ctx.strokeRect(worldPos.x, worldPos.y, 32, 32);\n            }\n            \n            // Draw path\n            if (currentPath && currentPath.length > 0) {\n                ctx.strokeStyle = '#ffff00';\n                ctx.lineWidth = 4;\n                ctx.lineCap = 'round';\n                ctx.lineJoin = 'round';\n                \n                ctx.beginPath();\n                for (let i = 0; i < currentPath.length; i++) {\n                    const point = currentPath[i];\n                    const worldPos = grid.gridToWorld(point.x, point.y);\n                    const centerX = worldPos.x + 16;\n                    const centerY = worldPos.y + 16;\n                    \n                    if (i === 0) {\n                        ctx.moveTo(centerX, centerY);\n                    } else {\n                        ctx.lineTo(centerX, centerY);\n                    }\n                }\n                ctx.stroke();\n                \n                // Draw path waypoints\n                ctx.fillStyle = '#ffff00';\n                for (const point of currentPath) {\n                    const worldPos = grid.gridToWorld(point.x, point.y);\n                    ctx.beginPath();\n                    ctx.arc(worldPos.x + 16, worldPos.y + 16, 3, 0, Math.PI * 2);\n                    ctx.fill();\n                }\n            }\n        }\n        \n        async function loadTutorialMap() {\n            try {\n                const mapData = await fetch('../js/data/maps/tutorial.json').then(r => r.json());\n                map.loadFromData(mapData);\n                clearPath();\n                updateStats();\n                document.getElementById('stat-current-map').textContent = 'Tutorial';\n                console.log('🗺️ Tutorial map loaded');\n            } catch (error) {\n                console.error('Failed to load tutorial map:', error);\n            }\n        }\n        \n        async function loadValleyMap() {\n            try {\n                const mapData = await fetch('../js/data/maps/valley.json').then(r => r.json());\n                map.loadFromData(mapData);\n                clearPath();\n                updateStats();\n                document.getElementById('stat-current-map').textContent = 'Valley';\n                console.log('🗺️ Valley map loaded');\n            } catch (error) {\n                console.error('Failed to load valley map:', error);\n            }\n        }\n        \n        async function loadPlainsMap() {\n            try {\n                const mapData = await fetch('../js/data/maps/plains.json').then(r => r.json());\n                map.loadFromData(mapData);\n                clearPath();\n                updateStats();\n                document.getElementById('stat-current-map').textContent = 'Plains';\n                console.log('🗺️ Plains map loaded');\n            } catch (error) {\n                console.error('Failed to load plains map:', error);\n            }\n        }\n        \n        function clearPath() {\n            currentPath = null;\n            startPoint = null;\n            goalPoint = null;\n            clickStep = 0;\n            pathStats = { length: 0, cost: 0 };\n            lastCalculationTime = 0;\n            updateStats();\n        }\n        \n        function togglePathMode() {\n            pathfindingMode = !pathfindingMode;\n            const btn = document.getElementById('path-mode-btn');\n            btn.textContent = `🖱️ Click Mode: ${pathfindingMode ? 'ON' : 'OFF'}`;\n            btn.classList.toggle('active', pathfindingMode);\n            \n            if (pathfindingMode) {\n                clickStep = 0;\n                console.log('👆 Click mode ON - Click start point, then goal point');\n            } else {\n                clearPath();\n                console.log('👆 Click mode OFF');\n            }\n        }\n        \n        function testRandomPaths() {\n            console.log('🎲 Testing random paths...');\n            \n            const testCount = 10;\n            let successCount = 0;\n            let totalTime = 0;\n            \n            for (let i = 0; i < testCount; i++) {\n                // Random start and goal\n                const startX = randomInt(2, 37);\n                const startY = randomInt(2, 27);\n                const goalX = randomInt(2, 37);\n                const goalY = randomInt(2, 27);\n                \n                const startTime = performance.now();\n                const path = pathfinder.findPath(startX, startY, goalX, goalY);\n                const endTime = performance.now();\n                \n                if (path) {\n                    successCount++;\n                }\n                totalTime += endTime - startTime;\n            }\n            \n            const avgTime = Math.round(totalTime / testCount);\n            console.log(`📊 Random test results: ${successCount}/${testCount} paths found, avg ${avgTime}ms`);\n        }\n        \n        async function runPathfindingTests() {\n            console.log('🧪 Running pathfinding tests...');\n            \n            // Test 1: Simple path\n            console.log('Test 1: Simple path on grass');\n            let path = pathfinder.findPath(5, 5, 10, 5);\n            console.log(path ? '✅ Simple path: PASS' : '❌ Simple path: FAIL');\n            \n            // Test 2: Path around obstacle\n            console.log('Test 2: Path around mountain');\n            // Create temporary mountain\n            for (let x = 8; x < 12; x++) {\n                for (let y = 8; y < 12; y++) {\n                    grid.setTerrain(x, y, 5); // TERRAIN.MOUNTAIN\n                }\n            }\n            path = pathfinder.findPath(5, 10, 15, 10);\n            console.log(path ? '✅ Obstacle avoidance: PASS' : '❌ Obstacle avoidance: FAIL');\n            \n            // Restore terrain\n            for (let x = 8; x < 12; x++) {\n                for (let y = 8; y < 12; y++) {\n                    grid.setTerrain(x, y, 0); // TERRAIN.GRASS\n                }\n            }\n            \n            // Test 3: No path possible\n            console.log('Test 3: Impossible path');\n            path = pathfinder.findPath(1, 1, 1, 1); // Mountain border\n            console.log(!path ? '✅ Impossible path detection: PASS' : '❌ Impossible path detection: FAIL');\n            \n            // Test 4: Performance test\n            console.log('Test 4: Performance test');\n            const perfStart = performance.now();\n            for (let i = 0; i < 100; i++) {\n                pathfinder.findPath(2, 2, 37, 27);\n            }\n            const perfTime = performance.now() - perfStart;\n            const avgPerf = Math.round(perfTime / 100);\n            console.log(`📊 Performance: ${avgPerf}ms average per pathfind`);\n            console.log(avgPerf < 10 ? '✅ Performance: PASS' : '❌ Performance: FAIL');\n            \n            console.log('🧪 Pathfinding tests completed');\n        }\n        \n        function updateStats() {\n            document.getElementById('stat-path-length').textContent = pathStats.length;\n            document.getElementById('stat-calculation-time').textContent = lastCalculationTime + 'ms';\n            document.getElementById('stat-terrain-cost').textContent = pathStats.cost.toFixed(1);\n        }\n        \n        // Utility functions\n        function randomInt(min, max) {\n            return Math.floor(Math.random() * (max - min + 1)) + min;\n        }\n        \n        // Keyboard shortcuts\n        document.addEventListener('keydown', (e) => {\n            if (e.code === 'KeyP' && e.ctrlKey) {\n                e.preventDefault();\n                runPathfindingTests();\n            }\n            if (e.code === 'KeyC') {\n                clearPath();\n            }\n            if (e.code === 'KeyM') {\n                togglePathMode();\n            }\n        });\n    </script>\n</body>\n</html>

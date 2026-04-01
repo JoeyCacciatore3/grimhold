@@ -1,0 +1,50 @@
+{
+  "name": "Grimhold Valley",
+  "description": "A sheltered valley perfect for learning the basics of town defense. Natural chokepoints and abundant resources make this an ideal starting location.",
+  "difficulty": "beginner",
+  "townCenter": {
+    "x": 20,
+    "y": 15
+  },
+  "spawnPoints": [
+    {
+      "x": 8,
+      "y": 15,
+      "name": "Western Pass",
+      "description": "Main enemy approach through the valley entrance"
+    },
+    {
+      "x": 32,
+      "y": 15,
+      "name": "Eastern Ridge",
+      "description": "Secondary approach from the mountain path"
+    },
+    {
+      "x": 20,
+      "y": 5,
+      "name": "Northern Cliffs",
+      "description": "Late-game flying enemies approach from here"
+    }
+  ],
+  "generate": {
+    "type": "valley",
+    "riverWidth": 2,
+    "forestDensity": 0.3,
+    "stoneDensity": 0.2
+  },
+  "features": {
+    "protectedSides": ["north", "south"],
+    "mainThreat": "west",
+    "resources": {
+      "stone": "abundant",
+      "wood": "moderate",
+      "water": "river access"
+    }
+  },
+  "tips": [
+    "Block the western pass with walls and towers",
+    "Use the river as a natural barrier",
+    "Stone deposits near the cliffs provide upgrade materials",
+    "Forest patches offer renewable wood supply"
+  ]
+}

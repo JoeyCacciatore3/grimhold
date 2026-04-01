@@ -1,0 +1,94 @@
+{
+  "name": "Windswept Plateau",
+  "description": "Open grasslands with scattered features. No natural defenses - every angle is vulnerable. Only for experienced defenders who can create their own chokepoints.",
+  "difficulty": "expert",
+  "townCenter": {
+    "x": 20,
+    "y": 15
+  },
+  "spawnPoints": [
+    {
+      "x": 3,
+      "y": 10,
+      "name": "Western Front",
+      "description": "Heavy enemy concentrations attack from this direction"
+    },
+    {
+      "x": 37,
+      "y": 10,
+      "name": "Eastern Front", 
+      "description": "Secondary attack force mirrors western assault"
+    },
+    {
+      "x": 3,
+      "y": 20,
+      "name": "Southwest Flank",
+      "description": "Fast raiders attempt to bypass main defenses"
+    },
+    {
+      "x": 37,
+      "y": 20,
+      "name": "Southeast Flank",
+      "description": "Coordinated pincer movement with southwest"
+    },
+    {
+      "x": 15,
+      "y": 3,
+      "name": "Northern Reach",
+      "description": "Siege weapons deploy at maximum range"
+    },
+    {
+      "x": 25,
+      "y": 3,
+      "name": "Northern Reach East", 
+      "description": "Heavy units advance to crush northern defenses"
+    },
+    {
+      "x": 10,
+      "y": 27,
+      "name": "Southern Advance",
+      "description": "Berserkers charge the southern perimeter"
+    },
+    {
+      "x": 30,
+      "y": 27,
+      "name": "Southern Advance East",
+      "description": "Elite units coordinate final southern push"
+    }
+  ],
+  "generate": {
+    "type": "plains",
+    "forests": 6,
+    "lakes": 3,
+    "stoneDeposits": 15,
+    "hillsCount": 4
+  },
+  "features": {
+    "openTerrain": true,
+    "multiDirectional": true,
+    "resources": {
+      "stone": "scattered deposits require expansion",
+      "wood": "small forest clusters",
+      "water": "isolated lakes"
+    }
+  },
+  "strategy": {
+    "early_game": "Expand quickly to secure resource deposits",
+    "mid_game": "Create artificial chokepoints with wall mazes", 
+    "late_game": "Survive overwhelming multi-directional assault"
+  },
+  "challenges": [
+    "No natural barriers to funnel enemies",
+    "Must defend 360 degrees simultaneously", 
+    "Resource deposits scattered across dangerous terrain",
+    "Enemy paths constantly change based on your walls",
+    "Siege weapons have clear line-of-sight to everything"
+  ],
+  "tips": [
+    "Build walls in layered rings, not straight lines",
+    "Force enemies into overlapping tower coverage zones", 
+    "Mobile hero unit becomes critical for plugging gaps",
+    "Economic buildings need heavy protection",
+    "Plan for strategic retreats to inner defensive rings"
+  ]
+}

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grimhold - Grid Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #ffffff;
+            font-family: monospace;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .test-info {
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #333;
+        }
+        
+        .test-status {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .status-item {
+            background: rgba(0,100,0,0.2);
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #00aa00;
+        }
+        
+        .status-item.fail {
+            background: rgba(100,0,0,0.2);
+            border-color: #aa0000;
+        }
+        
+        #game-canvas {
+            border: 2px solid #555;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .controls button {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        
+        .controls button:hover {
+            background: #444;
+        }
+        
+        .test-log {
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🏰 Grimhold - Grid System Test</h1>
+            <p>Testing Phase 1: Foundation - Grid, Renderer, Input</p>
+        </div>
+        
+        <div class="test-info">
+            <h3>Test Checklist:</h3>
+            <div class="test-status" id="test-status">
+                <div class="status-item" id="test-grid">Grid Rendering: Testing...</div>
+                <div class="status-item" id="test-coords">Mouse Coordinates: Testing...</div>
+                <div class="status-item" id="test-pan">Camera Panning: Testing...</div>
+                <div class="status-item" id="test-highlight">Tile Highlighting: Testing...</div>
+                <div class="status-item" id="test-performance">Performance: Testing...</div>
+            </div>
+        </div>
+        
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+        
+        <div class="controls">
+            <button onclick="runTests()">🧪 Run All Tests</button>
+            <button onclick="toggleDebug()">🐛 Toggle Debug</button>
+            <button onclick="resetCamera()">📷 Reset Camera</button>
+            <button onclick="game.togglePause()">⏸️ Pause/Resume</button>
+        </div>
+        
+        <div class="test-log" id="test-log"></div>
+    </div>
+
+    <!-- Game scripts -->
+    <script src="../js/utils/constants.js"></script>
+    <script src="../js/utils/math.js"></script>
+    <script src="../js/utils/events.js"></script>
+    <script src="../js/engine/Grid.js"></script>
+    <script src="../js/engine/Renderer.js"></script>
+    <script src="../js/engine/Input.js"></script>
+    <script src="../js/engine/Game.js"></script>
+
+    <script>
+        // Test framework
+        let game = null;
+        let testResults = {};
+        let testStartTime = 0;
+        
+        // Initialize test
+        document.addEventListener('DOMContentLoaded', async () => {
+            log('🚀 Starting Grimhold Grid Test');
+            
+            try {
+                const canvas = document.getElementById('game-canvas');
+                game = new Game(canvas);
+                await game.init();
+                game.start();
+                
+                log('✅ Game initialized successfully');
+                
+                // Start automatic testing after a short delay
+                setTimeout(() => {
+                    runTests();
+                }, 1000);
+                
+            } catch (error) {
+                log('❌ Failed to initialize game: ' + error.message);
+                console.error(error);
+            }
+        });
+        
+        // Test runner
+        async function runTests() {\n            log('🧪 Running automated tests...');\n            testStartTime = performance.now();\n            \n            await testGridRendering();\n            await testMouseCoordinates();\n            await testCameraPanning();\n            await testTileHighlighting();\n            await testPerformance();\n            \n            const duration = Math.round(performance.now() - testStartTime);\n            log(`📊 All tests completed in ${duration}ms`);\n            \n            updateTestSummary();\n        }\n        \n        // Individual tests\n        async function testGridRendering() {\n            log('Testing grid rendering...');\n            \n            try {\n                const grid = game.grid;\n                const renderer = game.renderer;\n                \n                // Check grid dimensions\n                const correctDimensions = grid.width === 40 && grid.height === 30;\n                \n                // Check tile size\n                const correctTileSize = grid.tileSize === 32;\n                \n                // Check rendering context\n                const hasContext = renderer.ctx !== null;\n                \n                const success = correctDimensions && correctTileSize && hasContext;\n                testResults.grid = success;\n                \n                log(success ? '✅ Grid rendering: PASS' : '❌ Grid rendering: FAIL');\n                if (!success) {\n                    log(`  - Dimensions: ${grid.width}x${grid.height} (expected 40x30)`);\n                    log(`  - Tile size: ${grid.tileSize} (expected 32)`);\n                    log(`  - Context: ${hasContext}`);\n                }\n                \n            } catch (error) {\n                testResults.grid = false;\n                log('❌ Grid rendering test failed: ' + error.message);\n            }\n        }\n        \n        async function testMouseCoordinates() {\n            log('Testing mouse coordinate conversion...');\n            \n            try {\n                const grid = game.grid;\n                \n                // Test coordinate conversion\n                const worldCoord = grid.gridToWorld(10, 15);\n                const gridCoord = grid.worldToGrid(worldCoord.x + grid.cameraX, worldCoord.y + grid.cameraY);\n                \n                const conversionWorks = gridCoord && gridCoord.x === 10 && gridCoord.y === 15;\n                \n                // Test bounds checking\n                const validTile = grid.isValidTile(20, 15);\n                const invalidTile = !grid.isValidTile(50, 50);\n                \n                const success = conversionWorks && validTile && invalidTile;\n                testResults.coords = success;\n                \n                log(success ? '✅ Mouse coordinates: PASS' : '❌ Mouse coordinates: FAIL');\n                if (!success) {\n                    log(`  - Conversion: ${conversionWorks}`);\n                    log(`  - Valid bounds: ${validTile}`);\n                    log(`  - Invalid bounds: ${invalidTile}`);\n                }\n                \n            } catch (error) {\n                testResults.coords = false;\n                log('❌ Mouse coordinate test failed: ' + error.message);\n            }\n        }\n        \n        async function testCameraPanning() {\n            log('Testing camera panning...');\n            \n            try {\n                const grid = game.grid;\n                const initialCamera = grid.getCameraPosition();\n                \n                // Test camera movement\n                grid.moveCamera(100, 50);\n                const movedCamera = grid.getCameraPosition();\n                \n                const cameraMoved = (\n                    movedCamera.x !== initialCamera.x || \n                    movedCamera.y !== initialCamera.y\n                );\n                \n                // Test camera bounds (should clamp)\n                grid.moveCamera(-10000, -10000);\n                const clampedCamera = grid.getCameraPosition();\n                const cameraClamped = clampedCamera.x >= 0 && clampedCamera.y >= 0;\n                \n                // Reset camera\n                grid.setCameraPosition(0, 0);\n                \n                const success = cameraMoved && cameraClamped;\n                testResults.pan = success;\n                \n                log(success ? '✅ Camera panning: PASS' : '❌ Camera panning: FAIL');\n                if (!success) {\n                    log(`  - Camera moved: ${cameraMoved}`);\n                    log(`  - Camera clamped: ${cameraClamped}`);\n                }\n                \n            } catch (error) {\n                testResults.pan = false;\n                log('❌ Camera panning test failed: ' + error.message);\n            }\n        }\n        \n        async function testTileHighlighting() {\n            log('Testing tile highlighting...');\n            \n            try {\n                const renderer = game.renderer;\n                \n                // Test highlight rendering (just check method exists and doesn't throw)\n                let highlightWorks = true;\n                try {\n                    renderer.drawTileHighlight(10, 10);\n                } catch (e) {\n                    highlightWorks = false;\n                }\n                \n                // Test coordinate display\n                let coordsWork = true;\n                try {\n                    renderer.drawTileCoords(10, 10);\n                } catch (e) {\n                    coordsWork = false;\n                }\n                \n                const success = highlightWorks && coordsWork;\n                testResults.highlight = success;\n                \n                log(success ? '✅ Tile highlighting: PASS' : '❌ Tile highlighting: FAIL');\n                \n            } catch (error) {\n                testResults.highlight = false;\n                log('❌ Tile highlighting test failed: ' + error.message);\n            }\n        }\n        \n        async function testPerformance() {\n            log('Testing performance...');\n            \n            try {\n                const startTime = performance.now();\n                \n                // Simulate multiple frame renders\n                for (let i = 0; i < 60; i++) {\n                    game.update(1/60);\n                    // Don't actually render to avoid visual spam\n                }\n                \n                const duration = performance.now() - startTime;\n                const fps = 60 / (duration / 1000);\n                \n                // Should handle 60 frames in reasonable time (> 30 effective FPS)\n                const performanceOk = fps > 30;\n                testResults.performance = performanceOk;\n                \n                log(performanceOk ? '✅ Performance: PASS' : '❌ Performance: FAIL');\n                log(`  - Effective FPS: ${Math.round(fps)}`);\n                \n            } catch (error) {\n                testResults.performance = false;\n                log('❌ Performance test failed: ' + error.message);\n            }\n        }\n        \n        function updateTestSummary() {\n            const tests = [\n                { id: 'test-grid', key: 'grid', name: 'Grid Rendering' },\n                { id: 'test-coords', key: 'coords', name: 'Mouse Coordinates' },\n                { id: 'test-pan', key: 'pan', name: 'Camera Panning' },\n                { id: 'test-highlight', key: 'highlight', name: 'Tile Highlighting' },\n                { id: 'test-performance', key: 'performance', name: 'Performance' }\n            ];\n            \n            tests.forEach(test => {\n                const element = document.getElementById(test.id);\n                const passed = testResults[test.key];\n                \n                element.textContent = `${test.name}: ${passed ? 'PASS' : 'FAIL'}`;\n                element.className = passed ? 'status-item' : 'status-item fail';\n            });\n            \n            const totalTests = Object.keys(testResults).length;\n            const passedTests = Object.values(testResults).filter(Boolean).length;\n            \n            log(`\\n📊 Test Summary: ${passedTests}/${totalTests} tests passed`);\n            \n            if (passedTests === totalTests) {\n                log('🎉 All tests passed! Phase 1 foundation is working correctly.');\n            } else {\n                log('⚠️ Some tests failed. Check the details above.');\n            }\n        }\n        \n        // Utility functions\n        function log(message) {\n            const logElement = document.getElementById('test-log');\n            const timestamp = new Date().toTimeString().split(' ')[0];\n            logElement.innerHTML += `[${timestamp}] ${message}<br>`;\n            logElement.scrollTop = logElement.scrollHeight;\n            console.log(message);\n        }\n        \n        function toggleDebug() {\n            if (game) {\n                game.toggleDebug();\n            }\n        }\n        \n        function resetCamera() {\n            if (game) {\n                game.grid.setCameraPosition(0, 0);\n                log('📷 Camera reset to origin');\n            }\n        }\n        \n        // Keyboard shortcut for testing\n        document.addEventListener('keydown', (e) => {\n            if (e.code === 'KeyT' && e.ctrlKey) {\n                e.preventDefault();\n                runTests();\n            }\n        });\n    </script>\n</body>\n</html>
